@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Leaflet Location Tracker with CSV Download</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      #map {
+        height: 500px;
+        width: 100%;
+      }
+      #controls {
+        margin: 10px;
+      }
+      #locationList {
+        margin-top: 20px;
+        font-family: Arial, sans-serif;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #eee;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="controls">
+      <button id="storeBtn">Store Current Location</button>
+      <button id="downloadCSV">Download CSV</button>
+    </div>
+    <div id="map"></div>
+
+    <div id="locationList">
+      <h3>Stored Locations</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Latitude</th>
+            <th>Longitude</th>
+          </tr>
+        </thead>
+        <tbody id="locationsTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+      let storedLocations = [];
+      let currentMarker;
+
+      // Initialize the map
+      const map = L.map("map").setView([0, 0], 13);
+
+      // Add OpenStreetMap tile layer
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "© OpenStreetMap",
+      }).addTo(map);
+
+      // Function to handle geolocation success
+      function onLocationFound(e) {
+        const lat = e.coords.latitude;
+        const lng = e.coords.longitude;
+
+        // If currentMarker exists, update its position, otherwise create it.
+        if (currentMarker) {
+          currentMarker.setLatLng([lat, lng]);
+        } else {
+          currentMarker = L.marker([lat, lng])
+            .addTo(map)
+            .bindPopup("You are here")
+            .openPopup();
+        }
+
+        // Set map view to current position
+        map.setView([lat, lng], 13);
+      }
+
+      // Function to handle geolocation error
+      function onLocationError(e) {
+        console.log(e);
+        alert(
+          "Unable to retrieve your location. Please ensure location services are enabled."
+        );
+      }
+
+      // Get the user's current location on load
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(onLocationFound, onLocationError, {
+          enableHighAccuracy: true,
+          maximumAge: 1000,
+          timeout: 5000,
+        });
+      } else {
+        alert("Geolocation is not supported by your browser.");
+      }
+
+      // Update the HTML table with stored locations
+      function updateLocationList() {
+        const tableBody = document.getElementById("locationsTableBody");
+        tableBody.innerHTML = ""; // Clear current table rows
+        storedLocations.forEach((loc, index) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${index + 1}</td><td>${loc.lat.toFixed(
+            5
+          )}</td><td>${loc.lng.toFixed(5)}</td>`;
+          tableBody.appendChild(row);
+        });
+      }
+
+      // Button click event to store location and add a marker
+      document
+        .getElementById("storeBtn")
+        .addEventListener("click", function () {
+          if (navigator.geolocation) {
+            console.log("got here");
+            navigator.geolocation.getCurrentPosition(function (position) {
+              const lat = position.coords.latitude;
+              const lng = position.coords.longitude;
+
+              // Store the coordinates in the array
+              storedLocations.push({ lat, lng });
+              console.log("Stored Locations:", storedLocations);
+
+              // Add a marker for the stored location
+              L.marker([lat, lng])
+                .addTo(map)
+                .bindPopup(
+                  `Stored Location: [${lat.toFixed(5)}, ${lng.toFixed(5)}]`
+                )
+                .openPopup();
+
+              // Update the list of stored locations
+              updateLocationList();
+            }, onLocationError);
+          }
+        });
+
+      // Button click event to download stored locations as CSV
+      document
+        .getElementById("downloadCSV")
+        .addEventListener("click", function () {
+          if (storedLocations.length === 0) {
+            alert("No locations stored to download.");
+            return;
+          }
+          let csvContent = "data:text/csv;charset=utf-8,";
+          csvContent += "Latitude,Longitude\r\n"; // CSV header
+
+          storedLocations.forEach((loc) => {
+            csvContent += `${loc.lat},${loc.lng}\r\n`;
+          });
+
+          const encodedUri = encodeURI(csvContent);
+          const link = document.createElement("a");
+          link.setAttribute("href", encodedUri);
+          link.setAttribute("download", "stored_locations.csv");
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        });
+    </script>
+  </body>
+</html>
