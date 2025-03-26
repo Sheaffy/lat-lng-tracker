@@ -5,7 +5,6 @@
     <title>Leaflet Location Tracker with CSV Download</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
       #map {
@@ -72,6 +71,7 @@
 
       // Function to handle geolocation success
       function onLocationFound(e) {
+        console.log(e);
         const lat = e.coords.latitude;
         const lng = e.coords.longitude;
 
@@ -86,27 +86,38 @@
         }
 
         // Set map view to current position
-        map.setView([lat, lng], 13);
+        map.setView([lat, lng], 18);
       }
 
       // Function to handle geolocation error
       function onLocationError(e) {
-        console.log(e);
         alert(
           "Unable to retrieve your location. Please ensure location services are enabled."
         );
       }
 
-      // Get the user's current location on load
       if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(onLocationFound, onLocationError, {
-          enableHighAccuracy: true,
-          maximumAge: 0,
-          timeout: 3000,
-        });
+        navigator.geolocation.getCurrentPosition(
+          onLocationFound,
+          onLocationError,
+          { enableHighAccuracy: true }
+        );
       } else {
         alert("Geolocation is not supported by your browser.");
       }
+
+      setInterval(() => {
+        // Get the user's current location on load
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            onLocationFound,
+            onLocationError,
+            { enableHighAccuracy: true }
+          );
+        } else {
+          alert("Geolocation is not supported by your browser.");
+        }
+      }, 3000);
 
       // Update the HTML table with stored locations
       function updateLocationList() {
@@ -126,7 +137,6 @@
         .getElementById("storeBtn")
         .addEventListener("click", function () {
           if (navigator.geolocation) {
-            console.log("got here");
             navigator.geolocation.getCurrentPosition(function (position) {
               const lat = position.coords.latitude;
               const lng = position.coords.longitude;
@@ -145,7 +155,7 @@
 
               // Update the list of stored locations
               updateLocationList();
-            }, onLocationError);
+            }, onLocationError, { enableHighAccuracy: true });
           }
         });
 
