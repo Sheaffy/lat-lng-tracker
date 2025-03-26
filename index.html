@@ -101,8 +101,8 @@
       if (navigator.geolocation) {
         navigator.geolocation.watchPosition(onLocationFound, onLocationError, {
           enableHighAccuracy: true,
-          maximumAge: 1000,
-          timeout: 5000,
+          maximumAge: 0,
+          timeout: 3000,
         });
       } else {
         alert("Geolocation is not supported by your browser.");
