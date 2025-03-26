@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CSV to Leaflet Map</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" 
+    
+    crossorigin=""/>
+  <style>
+    #map {
+      height: 500px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>CSV to Leaflet Map</h1>
+  <p>Select a CSV file (with headers "lat" and "lng"):</p>
+  <input type="file" id="csvFileInput" accept=".csv" />
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" 
+    crossorigin=""></script>
+  <script>
+    // Initialize the map
+    const map = L.map('map').setView([0, 0], 2);
+
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Function to parse CSV text into an array of objects
+    function parseCSV(csvText) {
+      const lines = csvText.trim().split('\n');
+      const headers = lines[0].split(',').map(h => h.trim());
+      const data = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        // Skip empty lines
+        if (!lines[i].trim()) continue;
+        const parts = lines[i].split(',').map(item => item.trim());
+        let entry = {};
+        headers.forEach((header, index) => {
+          entry[header] = parts[index];
+        });
+        data.push(entry);
+      }
+      return data;
+    }
+
+    // File input event listener
+    document.getElementById('csvFileInput').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const csvText = e.target.result;
+        const data = parseCSV(csvText);
+        if (data.length === 0) {
+          alert('CSV file is empty or invalid.');
+          return;
+        }
+
+        let latlngs = [];
+        // Clear any existing layers (optional: if reloading data)
+        map.eachLayer(function(layer) {
+          // Only remove non-tile layers
+          if (layer instanceof L.Marker || layer instanceof L.Polyline) {
+            map.removeLayer(layer);
+          }
+        });
+
+        // Process each row, create markers and collect coordinates
+        data.forEach(row => {
+          const lat = parseFloat(row.Latitude);
+          const lng = parseFloat(row.Longitude);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            const marker = L.marker([lat, lng]).addTo(map);
+            latlngs.push([lat, lng]);
+          }
+        });
+
+        // Draw red polyline connecting the markers in order
+        if (latlngs.length > 1) {
+          L.polyline(latlngs, {color: 'red'}).addTo(map);
+        }
+
+        // Adjust map view to the bounds of the markers
+        if (latlngs.length > 0) {
+          const bounds = L.latLngBounds(latlngs);
+          map.fitBounds(bounds);
+        }
+      };
+
+      reader.readAsText(file);
+    });
+  </script>
+</body>
+</html>
