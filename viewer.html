@@ -20,7 +20,10 @@
   <input type="file" id="csvFileInput" accept=".csv" /><br><br>
   <!-- dont add markers checkbox, only lines -->
   <label for="dontAddMarkers">Don't add markers</label>
-  <input type="checkbox" id="dontAddMarkers" />
+  <input type="checkbox" id="dontAddMarkers" /><br><br>
+
+  <label for="dontAddLines">Don't add lines</label>
+  <input type="checkbox" id="dontAddLines" />
 
    
   <div id="map"></div>
@@ -63,6 +66,7 @@
 
       //check dont add markers checkbox
       const dontAddMarkers = document.getElementById('dontAddMarkers').checked;
+      const dontAddLines = document.getElementById('dontAddLines').checked;
 
       const reader = new FileReader();
       reader.onload = function(e) {
@@ -92,7 +96,9 @@
               const marker = L.marker([lat, lng]).addTo(map);
             }
 
-            latlngs.push([lat, lng]);
+            if(!dontAddLines){
+              latlngs.push([lat, lng]);
+            }
           }
         });
 
