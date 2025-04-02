@@ -17,7 +17,12 @@
 <body>
   <h1>CSV to Leaflet Map</h1>
   <p>Select a CSV file (with headers "Latitude" and "Longitude"):</p>
-  <input type="file" id="csvFileInput" accept=".csv" />
+  <input type="file" id="csvFileInput" accept=".csv" /><br><br>
+  <!-- dont add markers checkbox, only lines -->
+  <label for="dontAddMarkers">Don't add markers</label>
+  <input type="checkbox" id="dontAddMarkers" />
+
+   
   <div id="map"></div>
 
   <!-- Leaflet JS -->
@@ -56,6 +61,9 @@
       const file = event.target.files[0];
       if (!file) return;
 
+      //check dont add markers checkbox
+      const dontAddMarkers = document.getElementById('dontAddMarkers').checked;
+
       const reader = new FileReader();
       reader.onload = function(e) {
         const csvText = e.target.result;
@@ -79,7 +87,11 @@
           const lat = parseFloat(row.Latitude);
           const lng = parseFloat(row.Longitude);
           if (!isNaN(lat) && !isNaN(lng)) {
-            const marker = L.marker([lat, lng]).addTo(map);
+            if (!dontAddMarkers) {
+            // Add a marker for each valid coordinate
+              const marker = L.marker([lat, lng]).addTo(map);
+            }
+
             latlngs.push([lat, lng]);
           }
         });
